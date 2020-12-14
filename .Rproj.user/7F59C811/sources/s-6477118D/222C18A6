@@ -1,0 +1,23 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1607975751781.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "3254632459",
+    "id" : "222C18A6",
+    "lastKnownWriteTime" : 1607986682,
+    "last_content_update" : 1607986682753,
+    "path" : "~/Desktop/parrots/introgress.analyses.R",
+    "project_path" : null,
+    "properties" : {
+        "cursorPosition" : "185,68",
+        "scrollLine" : "180",
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 2,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

@@ -1,0 +1,23 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1607985152991.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "1584459561",
+    "id" : "6E664CD4",
+    "lastKnownWriteTime" : 1607988883,
+    "last_content_update" : 1607988883170,
+    "path" : "~/Desktop/parrots/introgress.analyses.Rmd",
+    "project_path" : null,
+    "properties" : {
+        "cursorPosition" : "196,4",
+        "scrollLine" : "184",
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 3,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_markdown"
+}

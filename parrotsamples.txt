@@ -1,0 +1,31 @@
+	Location	Tissue type
+AmafinB646	CA	frozen
+AmafinB714	CA	frozen
+AmafinMLZ12743	Mexico	toe pad
+AmafinMLZ25447	Mexico	toe pad
+AmafinMLZ46005	Mexico	toe pad
+AmafinMLZ54378	Mexico	toe pad
+AmavirB564	CA	frozen
+AmavirB645	CA	frozen
+AmavirB715	CA	frozen
+AmavirB716	CA	frozen
+AmavirB717	CA	frozen
+AmavirB718	CA	frozen
+AmavirB720	CA	frozen
+AmavirB721	CA	frozen
+AmavirB724	CA	frozen
+AmavirB725	CA	frozen
+AmavirB726	CA	frozen
+AmavirB727	CA	frozen
+AmavirB728	CA	frozen
+AmavirB729	CA	frozen
+AmavirB730	CA	frozen
+AmavirB731	CA	frozen
+AmavirB734	CA	frozen
+AmavirB755	CA	frozen
+AmavirLA7603	CA	frozen
+AmavirLA8540	CA	frozen
+AmavirMLZ32264	Mexico	toe pad
+AmavirMLZ39529	Mexico	toe pad
+AmavirMLZ39531	Mexico	toe pad
+AmavirMLZ48335	Mexico	toe pad
