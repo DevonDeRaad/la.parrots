@@ -219,27 +219,27 @@ segments(x0 =1, y0 =0, x1 =.5, y1 =1)
 ```
 
 ```{r, fig.height=6, fig.width=9}
-#filter gen.mat to allow no missing data in either species to call a site fixed
-#assess downstream effects
-gen.mat.filtered<-gen.mat[lilac.miss == 0 & red.miss == 0,]
-dim(gen.mat.filtered) #214 SNPs left
-locus.info.filtered<-locus.info[lilac.miss == 0 & red.miss == 0,]
-
-#revisualize to see if this affects downstream inference
-#convert genotype data into a matrix of allele counts
-count.matrix<-prepare.data(admix.gen=gen.mat.filtered, loci.data=locus.info.filtered,
-                           parental1="1",parental2="0", pop.id=F,
-                           ind.id=F, fixed=T)
-
-#estimate hybrid index values
-hi.index.sim<-est.h(introgress.data=count.matrix,loci.data=locus.info.filtered,
-                    fixed=T, p1.allele="1", p2.allele="0")
-
-#plot
-mk.image(introgress.data=count.matrix, loci.data=locus.info.filtered,
-         marker.order=NULL,hi.index=hi.index.sim, ylab.image="Individuals",
-         xlab.h="Red-crowned ancestry", pdf=F,
-         col.image=c("red","green","blue"))
+##filter gen.mat to allow no missing data in either species to call a site fixed
+##assess downstream effects
+#gen.mat.filtered<-gen.mat[lilac.miss == 0 & red.miss == 0,]
+#dim(gen.mat.filtered) #214 SNPs left
+#locus.info.filtered<-locus.info[lilac.miss == 0 & red.miss == 0,]
+#
+##revisualize to see if this affects downstream inference
+##convert genotype data into a matrix of allele counts
+#count.matrix<-prepare.data(admix.gen=gen.mat.filtered, loci.data=locus.info.filtered,
+#                           parental1="1",parental2="0", pop.id=F,
+#                           ind.id=F, fixed=T)
+#
+##estimate hybrid index values
+#hi.index.sim<-est.h(introgress.data=count.matrix,loci.data=locus.info.filtered,
+#                    fixed=T, p1.allele="1", p2.allele="0")
+#
+##plot
+#mk.image(introgress.data=count.matrix, loci.data=locus.info.filtered,
+#         marker.order=NULL,hi.index=hi.index.sim, ylab.image="Individuals",
+#         xlab.h="Red-crowned ancestry", pdf=F,
+#         col.image=c("red","green","blue"))
 
 ```
 
@@ -253,17 +253,80 @@ dev.off() #reset plot window
 ```
 
 ```{r, fig.height=4.5, fig.width=4.5}
-#calculate mean heterozygosity
-het<-calc.intersp.het(introgress.data=count.matrix)
-#make triangle plot
-plot(x=hi.index.sim$h, y=het, bg=rgb(0,0,0,alpha=0.3), pch=21, cex=2, col="black",
-     xlab="Hybrid Index", ylab="Interspecific heterozygosity",
-     ylim=c(0,1))
-segments(x0 =0, y0 =0, x1 =.5, y1 =1)
-segments(x0 =1, y0 =0, x1 =.5, y1 =1)
-
-#removing the missing data certainly seems to make our triangle plot cleaner though,
+##calculate mean heterozygosity
+#het<-calc.intersp.het(introgress.data=count.matrix)
+##make triangle plot
+#plot(x=hi.index.sim$h, y=het, bg=rgb(0,0,0,alpha=0.3), pch=21, cex=2, col="black",
+#     xlab="Hybrid Index", ylab="Interspecific heterozygosity",
+#     ylim=c(0,1))
+#segments(x0 =0, y0 =0, x1 =.5, y1 =1)
+#segments(x0 =1, y0 =0, x1 =.5, y1 =1)
+#
+##removing the missing data certainly seems to make our triangle plot cleaner though,
 #so we just have to decide which trade off we want
 ```
 
+```{r, fig.height=8, fig.width=8}
+#do genomic cline analysis
+#give each SNP a unique identifier
+locus.info.filtered$uce<-locus.info.filtered$locus
+locus.info.filtered$locus<-locus.info.filtered$marker.pos
+
+#test for cline neutrality at each SNP with 1000 replicates
+cline.object<-genomic.clines(introgress.data=count.matrix, hi.index=hi.index.sim, loci.data=locus.info.filtered,
+               sig.test = T, method = "parametric", n.reps = 1000, classification = T)
+
+#we have 19 snps significantly non-neutral at a p value of 0
+nrow(cline.object$Summary.data[cline.object$Summary.data[,4] == 0,])
+
+#because of our skewed sample size in LA between RC and LC, we have more statistical power to detect
+#introgression from LC -> RC than vice versa. For this reason only look at significant LC->RC outliers.
+cline.object$Summary.data[cline.object$Quantiles[,1] == 1 & cline.object$Summary.data[,4] == 0,]
+#there are 10
+
+#plot each cline
+clines.plot(cline.data = cline.object, pdf = F, quantiles = T, cd=c("LC","het","RC"))
+
+```
+
+```{r}
+#reset plot window
+dev.off()
+```
+
+Because of our skewed sample size in LA between RC and LC, we have more statistical power to detect 
+introgression from LC -> RC than vice versa. For this reason we highlight significant LC->RC outliers.
+
+```{r}
+#plot all the clines overlayed, and color the LC->RC significant outliers in red
+cline.data<-cline.object
+## homozygote
+plot(0:1,0:1,type="n",xlab="Hybrid index",ylab="LC allele freq")
+n.loci<-dim(cline.data$Loci.data)[1]
+## Get needed values
+hi<-cline.data$hybrid.index
+ub<-cline.data$Neutral.AA[[1]][1,]
+lb<-cline.data$Neutral.AA[[2]][1,]
+
+## Plot neutral cline
+polygon.data.matrix<-rbind(hi,lb,ub,lb,ub)[,order(hi)]
+polygon.data.matrix.rev<-rbind(hi,lb,ub,lb,ub)[,order(-hi)]
+polygon(c(polygon.data.matrix[1,],polygon.data.matrix.rev[1,]),
+        c(polygon.data.matrix[2,],polygon.data.matrix.rev[3,]), col="grey",border=NA)
+
+## Plot observed Clines
+for(i in 1:n.loci){
+  AA.line<-cline.data$Fitted.AA[i,]
+  line.matrix<-rbind(hi,AA.line)[,order(hi)]
+  lines(line.matrix[1,],line.matrix[2,],lty=1) 
+}
+#plot significant outliers
+for(i in c(1:n.loci)[cline.object$Quantiles[,1] == 1 & cline.object$Summary.data[,4] == 0]){
+  AA.line<-cline.data$Fitted.AA[i,]
+  line.matrix<-rbind(hi,AA.line)[,order(hi)]
+  lines(line.matrix[1,],line.matrix[2,],lty=1, col="red") 
+}
+
+```
+plot of all the clines overlayed, with significant LC->RC significant outliers in red
 
