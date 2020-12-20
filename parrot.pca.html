@@ -352,10 +352,11 @@ plot(x=pca.scores$PC1, y=pca.scores$hi,
 <pre class="r"><code>#PC1 for all samples is highly correlated with hybrid index
 #amongst the LA red-crowned samples, we see a correlation btwn hybrid index score and PC1 assignment,  
 #indicating that these these samples with the largest hybrid index score are also more like 
-#lilac crowned according to pca which is non-parametric and requires no a priori assignment. 
+#lilac crowned according to the PCA which is non-parametric and requires no a priori assignment. 
 
 #The LA lilac crowned samples are not any more red-crowned than the Mexico lilac crowned samples according to PCA
-#It seems like there are clearly some real advanced backcrosses in the LA red crowned population, but for all intents and purposes the LA pop is all parental individuals with 2 hybrids. There are red crowned alleles that are being lost via introgressive hybridization, but a phenotypic red crowned or lilac crowned from LA should still be considered parental stock for conservation purposes.
+
+#It seems like there are clearly some real advanced backcrosses (I see three in particular that have higher hybrid indexes from introgress, and are slightly shifted toward lilac crown in PC1) in the LA red crowned population, but for all intents and purposes the LA pop is all parental individuals with 2 hybrids. There are red crowned alleles that are being lost via introgressive hybridization, but there are still a good amount of LA samples that could be considered pure parental stock for conservation purposes.
 
 pca&lt;-glPca(gen.100[c(1,2,7:26),], nf=6)
 hist(pca$scores[,1])</code></pre>
