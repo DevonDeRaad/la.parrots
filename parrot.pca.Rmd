@@ -11,6 +11,7 @@ library(vcfR)
 library(adegenet)
 library(ggplot2)
 library(introgress)
+library(StAMPP)
 ```
 
 ```{r}
@@ -124,6 +125,17 @@ pca<-glPca(gen.100[c(1,2,7:26),], nf=6)
 hist(pca$scores[,1])
 plot(density(pca$scores[,1]), xlab="PC1")
 #cool to see that this conforms almost exactly to the expectations of a bimodal hybrid population
+
+#calculate Fst between the two parental populations
+gen.ancestral<-gen.100[c(3:6,27:30),]
+gen.ancestral@pop<-as.factor(c(rep("lc", times=4),rep("rc", times=4)))
+stamppFst(gen.ancestral, nboots = 1, percent = 95, nclusters = 1)
+
+#calculate Fst between the two phenotypic classes in LA
+gen.la<-gen.100[c(1,2,7:23,25),]
+gen.la@pop<-as.factor(c(rep("lc", times=2),rep("rc", times=18)))
+stamppFst(gen.la, nboots = 1, percent = 95, nclusters = 1)
+#if you remove the two hybrid individuals, Fst between the two phenotypic classes in LA is actually higher than between the ancestral stock from Mexico, but only two LC samples from LA means that this is probably not significantly greater, probably well within confidence intervals with such small sample sizes. Still, evidence that overall divergence between the lineages is being strongly maintained despite hybridization.
 ```
 
 
