@@ -1,0 +1,129 @@
+---
+title: "parrot.pca"
+author: "Devon DeRaad"
+date: "12/14/2020"
+output: html_document
+---
+
+```{r, message=F, warning=F}
+#load libraries
+library(vcfR)
+library(adegenet)
+library(ggplot2)
+library(introgress)
+```
+
+```{r}
+#load data
+vcf<-read.vcfR("/Users/devder/Desktop/parrots/la.parrots/parrotsnpsunfiltered.vcf")
+#convert vcfr to genlight
+gen<- vcfR2genlight(vcf)
+#read in locality info for samples
+locs<-read.table("~/Desktop/parrots/la.parrots/parrotsamples.txt", header=T, sep="\t")
+colnames(locs)<-c("id","location","tiss")
+locs$group<-as.character(locs$location)
+locs$group[3:6]<-"Lilac Mexico"
+locs$group[27:30]<-"Red Crown Mexico"
+gen@ind.names
+
+#check that sampling IDs in text file match sample IDs in the vcf
+gen@ind.names == locs$id
+```
+
+
+```{r}
+#calculate missingness per sample
+mat<-extract.gt(vcf)
+miss<-c()
+for (i in 1:ncol(mat)){
+  miss[i]<-sum(is.na(mat[,i]))
+}
+locs$miss<-miss
+locs
+```
+elevated number of missing genotypes in toepad samples, as expected
+
+filter genlight to 60, 80, 100 % complete matrices
+```{r}
+#make vector to store missing proportion of each SNP
+miss<-c()
+gen.mat<-t(as.matrix(gen))
+for (i in 1:nrow(gen.mat)){
+  miss[i]<-sum(is.na(gen.mat[i,]))/ncol(gen.mat)
+}
+
+gen.60<-gen[,miss < .4]
+gen.80<-gen[,miss < .2]
+gen.100<-gen[,miss == 0]
+
+```
+
+#PCA with 8508 SNPs passing 60% completeness cutoff
+```{r}
+pca<-glPca(gen.60, nf=6)
+
+#pull pca scores out of df
+pca.scores<-as.data.frame(pca$scores)
+pca.scores$group<-locs$group
+
+#ggplot color by species
+ggplot(pca.scores, aes(x=PC1, y=PC2, color=group)) +
+  geom_point(cex = 5, alpha=.5)+
+  scale_color_manual(values=c("green","blue","red"))+
+  theme_classic()
+
+```
+
+#PCA with 3413 SNPs passing 80% completeness cutoff
+```{r}
+pca<-glPca(gen.80, nf=6)
+
+#pull pca scores out of df
+pca.scores<-as.data.frame(pca$scores)
+pca.scores$group<-locs$group
+
+#ggplot color by species
+ggplot(pca.scores, aes(x=PC1, y=PC2, color=group)) +
+  geom_point(cex = 5, alpha=.5)+
+  scale_color_manual(values=c("green","blue","red"))+
+  theme_classic()
+```
+
+#PCA with 1070 SNPs passing 100% completeness cutoff
+```{r}
+pca<-glPca(gen.100, nf=6)
+
+#pull pca scores out of df
+pca.scores<-as.data.frame(pca$scores)
+pca.scores$group<-locs$group
+
+#ggplot color by species
+ggplot(pca.scores, aes(x=PC1, y=PC2, color=group)) +
+  geom_point(cex = 5, alpha=.5)+
+  scale_color_manual(values=c("green","blue","red"))+
+  theme_classic()
+#best to stick with no missing data in order to avoid issues of missing data influencing group assignment
+```
+
+```{r}
+#read in csv with estimated hybrid index
+hi<-read.csv("~/Downloads/parrot.hybrid.index.csv")
+
+pca.scores$hi<-hi$h
+plot(x=pca.scores$PC1, y=pca.scores$hi,
+     xlab="PC1 with no prior assignment", ylab="hybrid index based on fixed SNPs in parental pops",)
+#PC1 for all samples is highly correlated with hybrid index
+#amongst the LA red-crowned samples, we see a correlation btwn hybrid index score and PC1 assignment,  
+#indicating that these these samples with the largest hybrid index score are also more like 
+#lilac crowned according to pca which is non-parametric and requires no a priori assignment. 
+
+#The LA lilac crowned samples are not any more red-crowned than the Mexico lilac crowned samples according to PCA
+#It seems like there are clearly some real advanced backcrosses in the LA red crowned population, but for all intents and purposes the LA pop is all parental individuals with 2 hybrids. There are red crowned alleles that are being lost via introgressive hybridization, but a phenotypic red crowned or lilac crowned from LA should still be considered parental stock for conservation purposes.
+
+pca<-glPca(gen.100[c(1,2,7:26),], nf=6)
+hist(pca$scores[,1])
+plot(density(pca$scores[,1]), xlab="PC1")
+#cool to see that this conforms almost exactly to the expectations of a bimodal hybrid population
+```
+
+
