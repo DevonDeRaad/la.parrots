@@ -104,6 +104,45 @@ ggplot(pca.scores, aes(x=PC1, y=PC2, color=group)) +
   scale_color_manual(values=c("green","blue","red"))+
   theme_classic()
 #best to stick with no missing data in order to avoid issues of missing data influencing group assignment
+
+#ggplot with text labels
+ggplot(pca.scores, aes(x=PC1, y=PC2))+
+  ggrepel::geom_text_repel(label=locs$id, cex=3)+
+  xlim(-10, 5)+
+  theme_classic()
+```
+
+```{r}
+### Calculate Nei's distances between individuals/pops
+pop(gen.100)<-locs$group
+gen.100@ind.names<-substr(locs$id, 7,14)
+sample.div <- stamppNeisD(gen.100[c(1:6),], pop = FALSE)
+#lilac NJ tree
+plot(nj(sample.div), type = "unrooted", cex = .65)
+sample.div <- stamppNeisD(gen.100, pop = FALSE)
+#export for splitstree
+stamppPhylip(distance.mat=sample.div, file="~/Downloads/parrot.splits.txt") 
+#all samples splitstree
+knitr::include_graphics(c("/Users/devder/Desktop/parrot.splitstree.png"))
+#seems like kind of equivocal placement of the LA lilac crown samples. The divergence within lilac crowned is quite shallow.
+gen.lilac<-gen.100[c(3:6),]
+gen.lilac@pop<-as.factor(c("n.mex","s.mex","n.mex","s.mex"))
+stamppFst(gen.lilac, nboots = 1, percent = 95, nclusters = 1)
+#Fst .05 between the two ancestral lilac crowned subspecies
+
+gen.rc<-gen.100[c(7:23,25,27:30),]
+gen.rc@pop<-as.factor(c("lower","upper","lower","lower","upper","lower","lower","upper","lower","lower",
+                           "lower","upper","lower","upper","upper","upper","upper","lower","lower","lower","lower","lower"))
+stamppFst(gen.rc, nboots = 1, percent = 95, nclusters = 1)
+#Fst .13 between red crowned clusters
+
+#actually looks like a deeper split within red-crowned than within lilac crowned
+#all of our historical red crowned samples are in the bottom cluster
+#top cluster could be from a different part of the historical range, or from a different contemporary source (Texas or Florida established pops?)
+#Do we see two mitochondrial clades within our red-crowned sample?
+#Could also be explained by ghost introgression, alleles introgressed from some species we didn't sample here generating a clade within the LA red crowned pop.
+
+#Also this splitstree is a nice visualization supporting that those three red crowned samples in particular (B728, B726, and B564) with the most intermediate PC1 scores, being advanced backcrosses.
 ```
 
 ```{r}
