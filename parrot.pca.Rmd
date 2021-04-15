@@ -100,16 +100,29 @@ pca.scores$group<-locs$group
 
 #ggplot color by species
 ggplot(pca.scores, aes(x=PC1, y=PC2, color=group)) +
-  geom_point(cex = 5, alpha=.5)+
-  scale_color_manual(values=c("green","blue","red"))+
-  theme_classic()
-#best to stick with no missing data in order to avoid issues of missing data influencing group assignment
+  geom_point(cex = 4, alpha=.75)+
+  scale_color_manual(values=c("green","plum","red"), name = "sampling locality", labels = c("Los Angeles", "western Mexico", "eastern Mexico"))+
+  theme_classic()+
+  theme(legend.position = "bottom", legend.key.size = unit(0, 'cm'),
+        legend.title = element_text(size=8), legend.text = element_text(size=6.5))
 
+#best to stick with no missing data in order to avoid issues of missing data influencing group assignment
+ggsave(filename="~/Desktop/parrots/pca.pdf", width=4, height=3.5)
 #ggplot with text labels
 ggplot(pca.scores, aes(x=PC1, y=PC2))+
   ggrepel::geom_text_repel(label=locs$id, cex=3)+
   xlim(-10, 5)+
   theme_classic()
+
+postscript("~/Desktop/parrots/parrot.pca.eps")
+ggplot(pca.scores, aes(x=PC1, y=PC2, color=group)) +
+  geom_point(cex = 4, alpha=1)+
+  scale_color_manual(values=c("green","plum","red"), name = "sampling locality", labels = c("Los Angeles", "western Mexico", "eastern Mexico"))+
+  theme_classic()+
+  theme(legend.position = "bottom", legend.key.size = unit(0, 'cm'),
+        legend.title = element_text(size=8), legend.text = element_text(size=6.5))
+dev.off()
+
 ```
 
 ```{r}
@@ -178,4 +191,40 @@ stamppFst(gen.la, nboots = 1, percent = 95, nclusters = 1)
 #if you remove the two hybrid individuals, Fst between the two phenotypic classes in LA is actually higher than between the ancestral stock from Mexico, but only two LC samples from LA means that this is probably not significantly greater, probably well within confidence intervals with such small sample sizes. Still, evidence that overall divergence between the lineages is being strongly maintained despite hybridization.
 ```
 
+```{r}
+parrot.morph<-read.csv("~/Downloads/parrot.morph.csv")
+
+#pca (drop tail length cause missing data)
+pca<-prcomp(parrot.morph[,c(5,7:11)], scale = TRUE)
+#plot pca
+pc<-as.data.frame(pca$x)
+pc$spec<-parrot.morph$Species
+ggplot(pc, aes(x=PC1, y=PC2, color=spec))+
+    geom_point(cex = 4, alpha=.75)+
+    scale_color_manual(values=c("green","plum","red"), name = "sampling locality", labels = c("Los Angeles", "western Mexico", "eastern Mexico"))+
+  theme_classic()
+
+parrot.morph$PC1<-pc$PC1
+#plot hybrid index vs morph PC1
+ggplot(parrot.morph, aes(x=PC1, y=hybrid, color=Species)) +
+  geom_point(cex=4, alpha=.75)+
+      scale_color_manual(values=c("green","plum","red"), name = "sampling locality", labels = c("Los Angeles", "western Mexico", "eastern Mexico"))+
+  xlab("morphology PC1")+
+  ylab("hybrid index")+
+  theme_classic()
+ggsave(filename="~/Desktop/parrots/morph.hybrid.pdf", width=7, height=4.5)
+
+#plot hybrid index vs tail length
+ggplot(parrot.morph, aes(x=tail, y=hybrid, color=Species)) +
+  geom_point(cex=4, alpha=.75)+
+  scale_color_manual(values=c("green","plum","red"), name = "sampling locality", labels = c("Los Angeles", "western Mexico", "eastern Mexico"))+
+  xlab("tail length")+
+  ylab("hybrid index")+
+  theme_classic()
+
+#
+ggplot(parrot.morph, aes(x=Species, y=tail)) + 
+  geom_boxplot()+
+  theme_classic()
+```
 

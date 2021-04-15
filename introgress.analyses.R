@@ -260,4 +260,3 @@ for(i in c(1:n.loci)[cline.object$Quantiles[,1] == 1 & cline.object$Summary.data
 #plot of all the clines overlayed, with significant LC->RC significant outliers in red
 
 
-

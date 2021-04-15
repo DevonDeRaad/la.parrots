@@ -1,0 +1,190 @@
+library(vcfR)
+library(adegenet)
+library(ggplot2)
+library(introgress)
+library(StAMPP)
+library(gridExtra)
+
+#load data
+vcf<-read.vcfR("/Users/devder/Desktop/parrots/la.parrots/parrotsnpsunfiltered.vcf")
+#convert vcfr to genlight
+gen<- vcfR2genlight(vcf)
+#read in locality info for samples
+locs<-read.table("~/Desktop/parrots/la.parrots/parrotsamples.txt", header=T, sep="\t")
+colnames(locs)<-c("id","location","tiss")
+locs$group<-as.character(locs$location)
+locs$group[c(1,2)]<-"LA lilac crowns"
+locs$group[3:6]<-"Mexico lilac crowns"
+locs$group[27:30]<-"Mexico red crowns"
+locs$group[c(24,26)]<-"RC/LC hybrids"
+locs$group[c(8,11,22,20,18,23,14)]<-"ghost introgressed LA RCs"
+locs$group[locs$group == "CA"]<-"LA red crowns"
+gen@ind.names
+
+#check that sampling IDs in text file match sample IDs in the vcf
+gen@ind.names == locs$id
+
+#make vector to store missing proportion of each SNP
+miss<-c()
+gen.mat<-t(as.matrix(gen))
+for (i in 1:nrow(gen.mat)){
+  miss[i]<-sum(is.na(gen.mat[i,]))/ncol(gen.mat)
+}
+
+#make dataframes at various missing data cutoffs
+gen.60<-gen[,miss < .4]
+gen.80<-gen[,miss < .2]
+gen.100<-gen[,miss == 0]
+gen.60
+gen.100
+
+#make dataframe with only Red crowned parrots
+rc.80<-gen.80[c(7:23,25,27:30),]
+rc.100<-gen.100[c(7:23,25,27:30),]
+#make red crowned locs file
+rc<-locs[c(7:23,25,27:30),]
+
+#make pca
+pca<-glPca(rc.80, nf=6)
+
+#pull pca scores out of df
+pca.scores<-as.data.frame(pca$scores)
+pca.scores$group<-rc$group
+
+#ggplot color by species
+ggplot(pca.scores, aes(x=PC1, y=PC2, color=group)) +
+  geom_point(cex = 4, alpha=.75)+
+  theme_classic()+
+  theme(legend.position = "bottom", legend.key.size = unit(0, 'cm'),
+        legend.title = element_text(size=8), legend.text = element_text(size=6.5))
+
+#plot pca with sample names
+ggplot(pca.scores, aes(x=PC1, y=PC2))+
+  ggrepel::geom_text_repel(label=rc$id, cex=3)+
+  theme_classic()
+
+#amongst Red-Crowned parrots we have this strange group from LA that clusters away from everything else
+#investigate the SNPs driving this pattern
+#store PC loadings
+investigate.pca.outliers <- function(gen, std){
+  genlight<-gen
+  for (i in std){
+    pca <- glPca(genlight, nf=10)
+    df<-as.data.frame(cbind(as.character(genlight@chromosome), genlight@position, pca$loadings[,1]))
+    colnames(df)<-c("chrom","pos","PC1loading")
+    df$PC1loading<-as.numeric(as.character(df$PC1loading))
+    hist<-ggplot(df, aes(x=PC1loading))+
+      geom_histogram(color="black", fill="white", bins=20)+
+      geom_vline(aes(xintercept=sd(PC1loading)*i), color = "red")+
+      geom_vline(aes(xintercept=-sd(PC1loading)*i), color = "red")+
+      theme_classic()+
+      ylab(paste(i,"SDs from mean"))
+    #list loading outliers
+    print(paste("outliers >",i,"standard deviations from mean PC1 loading"))
+    print(head(df[abs(df$PC1loading) > sd(df$PC1loading)*i,]))
+    print(table(df$chrom[abs(df$PC1loading) > sd(df$PC1loading)*i])[table(df$chrom[abs(df$PC1loading) > sd(df$PC1loading)*i]) > 0])
+    #pca1
+    pca<- glPca(genlight, nf=10)
+    pca.scores<-as.data.frame(pca$scores)
+    #ggplot color by species
+    pca.1<-ggplot(pca.scores, aes(x=PC1, y=PC2, col=as.factor(substr(genlight$ind.names, 1,3)))) +
+      geom_point(cex = 2.5)+
+      ggtitle(paste(ncol(genlight),"binary SNPs"))+
+      theme_classic()+
+      theme(legend.position = "none")
+    #pca2
+    pca<- glPca(genlight[,abs(df$PC1loading) > sd(df$PC1loading)*i], nf=10)
+    pca.scores<-as.data.frame(pca$scores)
+    #ggplot color by species
+    pca.2<-ggplot(pca.scores, aes(x=PC1, y=PC2, col=as.factor(substr(genlight$ind.names, 1,3)))) +
+      geom_point(cex = 2.5)+
+      ggtitle(paste(ncol(genlight[,abs(df$PC1loading) > sd(df$PC1loading)*i]),"strongest PC1 loading SNPs"))+
+      theme_classic()+
+      theme(legend.position = "none")
+    #pca3
+    pca<- glPca(genlight[,!abs(df$PC1loading) > sd(df$PC1loading)*i], nf=10)
+    pca.scores<-as.data.frame(pca$scores)
+    #ggplot color by species
+    pca.3<-ggplot(pca.scores, aes(x=PC1, y=PC2, col=as.factor(substr(genlight$ind.names, 1,3)))) +
+      geom_point(cex = 2.5)+
+      ggtitle(paste(ncol(genlight[,!abs(df$PC1loading) > sd(df$PC1loading)*i]),"remaining SNPs"))+
+      theme_classic()+
+      theme(legend.position = "none")
+    #print together
+    gl<-list(pca.1,pca.2,pca.3,hist)
+    grid.arrange(grobs = gl,
+                 widths = c(1,1,1),
+                 layout_matrix = rbind(c(1,2,3),
+                                       c(4,4,4)))
+  }
+}
+
+investigate.pca.outliers(gen = rc.80, std = c(3,3.5,3.6))
+
+#store PC1 axis loadings for each SNP
+df<-as.data.frame(cbind(as.character(rc.80@chromosome), rc.80@position, pca$loadings[,1]))
+colnames(df)<-c("chrom","pos","PC1loading")
+df$PC1loading<-as.numeric(as.character(df$PC1loading))
+
+#make hist of SNPs PC1 
+table(df$PC1loading < -.05)
+table(rc.80@chromosome == as.vector(df$chrom))
+table(gen.80@loc.names == rc.80@loc.names)
+#make a new genlight with only the 183 SNPs putatively driving the "ghost introgression" pattern 
+intro.loci<-gen.80[,df$PC1loading < -.05]
+
+#make pca
+pca<-glPca(intro.loci, nf=6)
+
+#pull pca scores out of df
+pca.scores<-as.data.frame(pca$scores)
+pca.scores$group<-locs$group
+
+#ggplot color by species
+ggplot(pca.scores, aes(x=PC1, y=PC2, color=group)) +
+  geom_point(cex = 4, alpha=.75)+
+  theme_classic()+
+  theme(legend.position = "bottom", legend.key.size = unit(0, 'cm'),
+        legend.title = element_text(size=8), legend.text = element_text(size=6.5))
+#plot pca with sample names
+ggplot(pca.scores, aes(x=PC1, y=PC2))+
+  ggrepel::geom_text_repel(label=locs$id, cex=3)+
+  theme_classic()
+
+#these loci don't lump the lilac crowned birds in with the potentially introgressed birds, confirming that these alleles don't come from lilac crowns
+
+#calculate genome-wide heterozygosity and make df for plotting
+gen.mat<-as.matrix(gen.80)
+loci<-rowSums(is.na(gen.mat) == FALSE)
+het<-rowSums(gen.mat == 1, na.rm = TRUE)/loci
+het.df<-data.frame(id=locs$id,group=locs$group,het=het)
+
+#reorder x axis
+het.df$group <- factor(het.df$group, levels=c("Mexico lilac crowns", "LA lilac crowns", "Mexico red crowns", "LA red crowns",
+                                              "RC/LC hybrids", "ghost introgressed LA RCs"))
+#plot genome-wide heterozygosity as violin plots for each group
+ggplot(het.df, aes(x=group, y=het)) + 
+  geom_violin(trim=FALSE)+
+  geom_dotplot(binaxis='y', stackdir='center', dotsize = .35, alpha=.6)+
+  theme_classic()+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  ylab("genome-wide heterozygosity")
+
+#calculate heterozygosity in putatively introgressed loci and make df for plotting
+gen.mat<-as.matrix(intro.loci)
+loci<-rowSums(is.na(gen.mat) == FALSE)
+het<-rowSums(gen.mat == 1, na.rm = TRUE)/loci
+het.df<-data.frame(id=locs$id,group=locs$group,het=het)
+
+#plot putatively introgressed heterozygosity as violin plots for each group
+ggplot(het.df, aes(x=group, y=het)) + 
+  geom_violin(trim=FALSE)+
+  geom_dotplot(binaxis='y', stackdir='center', dotsize = .35, alpha=.6)+
+  theme_classic()+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  ylab("heterozygosity in putatively introgressed loci")+
+  ylim(c(0,1))
+
+
+
+
