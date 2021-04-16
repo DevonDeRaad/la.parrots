@@ -10,3 +10,7 @@ Visualizations of processes described in the paper
 ### Investigate genetic structure of all individuals and quantify divergence between the species
 *   view workflow:
     > <https://devonderaad.github.io/la.parrots/parrot.pca.html>
+
+### Investigate potential ghost introgression in the group of Red Crowned parrots which cluster separately from the rest of the species
+*   view workflow:
+    > <https://devonderaad.github.io/la.parrots/ghost.introgression.investigation.html>
