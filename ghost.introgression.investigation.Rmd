@@ -53,7 +53,7 @@ rc.100<-gen.100[c(7:23,25,27:30),]
 rc<-locs[c(7:23,25,27:30),]
 ```
 
-
+#make a PCA with only Red-crowned parrots to identify this potential "ghost introgression" pattern where 7 LA red-crowned samples are united as a separate clade from the rest of the sampled red-crowns
 ```{r}
 #make pca
 pca<-glPca(rc.80, nf=6)
@@ -76,7 +76,7 @@ ggplot(pca.scores, aes(x=PC1, y=PC2))+
 
 ```
 
-
+#plot sequential PCAs using only the top loading SNPs, and dropping the top loading SNPs, in order to identify how many SNPs are driving the pattern of relatedness we see.
 ```{r}
 #amongst Red-Crowned parrots we have this strange group from LA that clusters away from everything else
 #investigate the SNPs driving this pattern
@@ -139,6 +139,7 @@ investigate.pca.outliers(gen = rc.80, std = c(3,3.5,3.6))
 ```
 
 
+#make a PCA including all samples, with only these 183 putatively introgressed SNPs driving the pattern of structure that separates the 7 LA red crowns from the rest of the red crowns
 ```{r}
 #store PC1 axis loadings for each SNP
 df<-as.data.frame(cbind(as.character(rc.80@chromosome), rc.80@position, pca$loadings[,1]))
@@ -170,9 +171,10 @@ ggplot(pca.scores, aes(x=PC1, y=PC2))+
   ggrepel::geom_text_repel(label=locs$id, cex=3)+
   theme_classic()
 
-#these loci don't lump the lilac crowned birds in with the potentially introgressed birds, confirming that these alleles don't come from lilac crowns
 
 ```
+
+#these putatively introgressed loci don't lump the potentially introgressed RC birds with lilac crowned birds, confirming that these alleles don't come from lilac crowns
 
 ```{r}
 #calculate genome-wide heterozygosity and make df for plotting
@@ -191,7 +193,10 @@ ggplot(het.df, aes(x=group, y=het)) +
   theme_classic()+
   theme(axis.text.x = element_text(angle = 45, hjust = 1))+
   ylab("genome-wide heterozygosity")
+```
 
+#Genome-wide heterozygosity is elevated in these 7 potentially introgressed Red-crowned samples, almost as elevated as in the clearly introgressed (F2/F3?) RC/LC hybrids. Lilac crown heterozygosity is really high in LA and in the ancestral pop
+```{r}
 #calculate heterozygosity in putatively introgressed loci and make df for plotting
 gen.mat<-as.matrix(intro.loci)
 loci<-rowSums(is.na(gen.mat) == FALSE)
@@ -207,4 +212,7 @@ ggplot(het.df, aes(x=group, y=het)) +
   ylab("heterozygosity in putatively introgressed loci")+
   ylim(c(0,1))
 ```
+
+#This plot shows that almost every single SNP driving this pattern of relatedness in these 7 strange red crowned samples is heterozygous in these individuals, a clear indicator of introgression. What doesn't make sense, is that two of the Lilac-crowned samples from Mexico are also heterozygous at a large proportion of these sites. Still some mystery around what exactly is going on here
+
 
